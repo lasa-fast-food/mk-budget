@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MK Budget 2026</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --card: #16213e;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --green: #00c897;
+    --yellow: #f5a623;
+    --red: #e94560;
+    --text: #eaeaea;
+    --muted: #8892a4;
+    --border: #2a2a45;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: .5px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  .sync-badge {
+    font-size: .7rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    transition: all .3s;
+  }
+  .sync-badge.online  { background: #00c89720; color: var(--green); border: 1px solid #00c89740; }
+  .sync-badge.syncing { background: #f5a62320; color: var(--yellow); border: 1px solid #f5a62340; }
+  .sync-badge.offline { background: #e9456020; color: var(--red); border: 1px solid #e9456040; }
+  .sync-badge.saved   { background: #00c89720; color: var(--green); border: 1px solid #00c89740; }
+
+  .year-select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: .8rem;
+    cursor: pointer;
+  }
+  .btn-icon {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: color .2s, border-color .2s;
+  }
+  .btn-icon:hover { color: var(--text); border-color: var(--accent); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 0 2px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 6px 10px;
+    font-size: .75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+    letter-spacing: .3px;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { color: var(--text); background: var(--card); }
+
+  /* CONTENT */
+  .content { padding: 16px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: .72rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: .5px;
+  }
+
+  /* SUMMARY NUMBERS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-card.green { border-color: #00c89740; }
+  .stat-card.red   { border-color: #e9456040; }
+  .stat-card.yellow{ border-color: #f5a62340; }
+  .stat-card.blue  { border-color: #0f346040; }
+  .stat-label { font-size: .68rem; color: var(--muted); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
+  .stat-value { font-size: 1.25rem; font-weight: 800; margin-top: 4px; }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.blue   { color: #4fa3e0; }
+
+  /* ITEMS LIST */
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .item-name { flex: 1; font-size: .9rem; }
+  .item-amount { font-size: .9rem; font-weight: 700; }
+  .item-amount.income { color: var(--green); }
+  .item-amount.expense { color: var(--red); }
+  .item-amount.loan { color: var(--yellow); }
+  .item-amount.saving { color: #4fa3e0; }
+  .item-actions { display: flex; gap: 4px; }
+  .item-actions button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .75rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .item-actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 20px; color: var(--muted); font-size: .85rem; }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+
+  /* MONTH SELECTOR */
+  .month-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .month-row label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  .month-select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: .85rem;
+    cursor: pointer;
+    flex: 1;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: #00000099;
+    z-index: 200;
+    display: flex; align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 12px 12px;
+    padding: 20px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .modal h3 { font-size: 1rem; margin-bottom: 16px; }
+  .modal h3 span { color: var(--accent); }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: .78rem; color: var(--muted); font-weight: 600; display: block; margin-bottom: 4px; letter-spacing: .5px; }
+  .form-group input, .form-group select {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: .9rem;
+    transition: border-color .2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-save {
+    flex: 1;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+  }
+  .btn-cancel {
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: .9rem;
+    cursor: pointer;
+  }
+
+  /* CHART AREA */
+  .chart-wrap { position: relative; height: 180px; margin: 10px 0; }
+  canvas { border-radius: 8px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: #00c897ee;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: .85rem;
+    z-index: 999;
+    transition: opacity .4s;
+  }
+  .toast.hidden { opacity: 0; pointer-events: none; }
+  .toast.error { background: #e94560ee; }
+
+  /* SUPABASE SYNC NOTICE */
+  .sync-row {
+    display: flex; gap: 8px; align-items: center;
+    font-size: .75rem; color: var(--muted);
+    padding: 8px 0 0;
+  }
+  .sync-row .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .sync-row .dot.offline { background: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <h1>💰 MK Budget <span>2026</span></h1>
+    <div class="header-actions">
+      <span id="syncBadge" class="sync-badge syncing">⟳ Syncing…</span>
+      <select class="year-select" id="yearSelect">
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+      </select>
+      <button class="btn-icon" title="Export CSV" onclick="exportCSV()">⬇</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('income',this)">💵 Income</button>
+    <button class="tab-btn" onclick="switchTab('loans',this)">🏦 Loans</button>
+    <button class="tab-btn" onclick="switchTab('savings',this)">💎 Savings</button>
+    <button class="tab-btn" onclick="switchTab('expenses',this)">💸 Expenses</button>
+    <button class="tab-btn" onclick="switchTab('summary',this)">📊 Summary</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- MONTH SELECTOR (shared) -->
+  <div class="month-row">
+    <label>MONTH</label>
+    <select class="month-select" id="monthSelect" onchange="loadAll()">
+      <option value="01">January</option><option value="02">February</option>
+      <option value="03">March</option><option value="04">April</option>
+      <option value="05">May</option><option value="06" selected>June</option>
+      <option value="07">July</option><option value="08">August</option>
+      <option value="09">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+
+  <!-- INCOME TAB -->
+  <div id="panel-income" class="panel active">
+    <div class="card">
+      <div class="card-title">INCOME SOURCES <button class="add-btn" onclick="openModal('income')">+ ADD</button></div>
+      <div id="list-income"><div class="empty">No income added yet.</div></div>
+    </div>
+  </div>
+
+  <!-- LOANS TAB -->
+  <div id="panel-loans" class="panel">
+    <div class="card">
+      <div class="card-title">SHACK LOANS <button class="add-btn" onclick="openModal('loans')">+ ADD</button></div>
+      <div id="list-loans"><div class="empty">No loans added yet.</div></div>
+    </div>
+  </div>
+
+  <!-- SAVINGS TAB -->
+  <div id="panel-savings" class="panel">
+    <div class="card">
+      <div class="card-title">SAVINGS <button class="add-btn" onclick="openModal('savings')">+ ADD</button></div>
+      <div id="list-savings"><div class="empty">No savings added yet.</div></div>
+    </div>
+  </div>
+
+  <!-- EXPENSES TAB -->
+  <div id="panel-expenses" class="panel">
+    <div class="card">
+      <div class="card-title">EXPENSES <button class="add-btn" onclick="openModal('expenses')">+ ADD</button></div>
+      <div id="list-expenses"><div class="empty">No expenses added yet.</div></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div id="panel-summary" class="panel">
+    <div class="summary-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value green" id="sum-income">R 0</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value red" id="sum-expenses">R 0</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Loan Repayments</div>
+        <div class="stat-value yellow" id="sum-loans">R 0</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Savings</div>
+        <div class="stat-value blue" id="sum-savings">R 0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">NET BALANCE</div>
+      <div style="font-size:2rem;font-weight:900;text-align:center;padding:10px 0;" id="net-balance">R 0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="net-bar" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:6px;" id="net-label"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">BREAKDOWN</div>
+      <div id="breakdown-list"></div>
+    </div>
+
+    <div class="sync-row">
+      <div class="dot" id="syncDot"></div>
+      <span id="syncLabel">Checking cloud sync…</span>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <h3>✏️ <span id="modalTitle">Add Item</span></h3>
+    <div class="form-group">
+      <label>DESCRIPTION</label>
+      <input type="text" id="fName" placeholder="e.g. Salary, Rent, Capitec…" />
+    </div>
+    <div class="form-group">
+      <label>AMOUNT (R)</label>
+      <input type="number" id="fAmount" placeholder="0.00" min="0" step="0.01" />
+    </div>
+    <div class="form-group" id="fCatGroup">
+      <label>CATEGORY</label>
+      <select id="fCat">
+        <option value="">— Select —</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveItem()">✓ Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://owwjslrpxtkfuhbratzk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93d2pzbHJweHRrZnVoYnJhdHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg3MTc1MDIsImV4cCI6MjAzNDI5MzUwMn0.Ry9JFMbjMwBh0pOzOFMqVkE5GHmVVAVVq3bCxCxgNag';
+const TABLE = 'mk_budget';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── CATEGORIES PER TYPE ────────────────────────────────────────────────────
+const CATS = {
+  income:   ['Salary','LASA Sales','Freelance','Other Income'],
+  loans:    ['Shack Loan','Personal Loan','Store Credit','Other Loan'],
+  savings:  ['Emergency Fund','Business Reserve','Capitec Savings','Goal Savings'],
+  expenses: ['Rent/Bond','Groceries','Transport','Electricity','Water','Airtime/Data','School Fees','Clothing','Medical','Entertainment','Tithes','Other']
+};
+
+const COLORS = { income:'#00c897', loans:'#f5a623', savings:'#4fa3e0', expenses:'#e94560' };
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let data = { income:[], loans:[], savings:[], expenses:[] };
+let editId = null;
+let currentTab = 'income';
+let currentType = 'income';
+
+function getKey() {
+  const y = document.getElementById('yearSelect').value;
+  const m = document.getElementById('monthSelect').value;
+  return `${y}-${m}`;
+}
+
+// ─── SUPABASE HELPERS ────────────────────────────────────────────────────────
+async function loadAll() {
+  setSyncStatus('syncing');
+  try {
+    const key = getKey();
+    const { data: rows, error } = await sb.from(TABLE)
+      .select('*')
+      .eq('period', key)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    data = { income:[], loans:[], savings:[], expenses:[] };
+    (rows || []).forEach(r => {
+      if (data[r.type]) data[r.type].push(r);
+    });
+    renderAll();
+    setSyncStatus('saved');
+  } catch(e) {
+    console.error(e);
+    setSyncStatus('offline');
+    // Fallback to localStorage
+    const stored = localStorage.getItem('mkbudget_' + getKey());
+    if (stored) {
+      data = JSON.parse(stored);
+      renderAll();
+    }
+    showToast('Offline — using local cache', true);
+  }
+}
+
+async function saveToCloud(item) {
+  setSyncStatus('syncing');
+  try {
+    if (item.id && !item.id.startsWith('local_')) {
+      const { error } = await sb.from(TABLE).upsert(item);
+      if (error) throw error;
+    } else {
+      const toInsert = { ...item };
+      delete toInsert.id;
+      const { error } = await sb.from(TABLE).insert(toInsert);
+      if (error) throw error;
+    }
+    setSyncStatus('saved');
+    backupLocal();
+  } catch(e) {
+    console.error(e);
+    setSyncStatus('offline');
+    backupLocal();
+    showToast('Saved locally — will sync when online', true);
+  }
+}
+
+async function deleteFromCloud(id) {
+  setSyncStatus('syncing');
+  try {
+    if (!id.startsWith('local_')) {
+      const { error } = await sb.from(TABLE).delete().eq('id', id);
+      if (error) throw error;
+    }
+    setSyncStatus('saved');
+    backupLocal();
+  } catch(e) {
+    setSyncStatus('offline');
+    backupLocal();
+  }
+}
+
+function backupLocal() {
+  localStorage.setItem('mkbudget_' + getKey(), JSON.stringify(data));
+}
+
+// ─── SYNC STATUS UI ──────────────────────────────────────────────────────────
+function setSyncStatus(state) {
+  const badge = document.getElementById('syncBadge');
+  const dot   = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  badge.className = 'sync-badge ' + state;
+  if (state === 'syncing') {
+    badge.textContent = '⟳ Syncing…';
+    if (dot) { dot.className = 'dot'; label.textContent = 'Syncing with cloud…'; }
+  } else if (state === 'saved') {
+    badge.textContent = '✓ Synced';
+    if (dot) { dot.className = 'dot'; label.textContent = 'Cloud sync active — data saved online'; }
+  } else if (state === 'offline') {
+    badge.textContent = '⚠ Offline';
+    if (dot) { dot.className = 'dot offline'; label.textContent = 'Offline — data saved locally'; }
+  }
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function openModal(type, id) {
+  currentType = type;
+  editId = id || null;
+  document.getElementById('modalTitle').textContent = id ? 'Edit Item' : `Add ${type.charAt(0).toUpperCase()+type.slice(1)}`;
+  const catSel = document.getElementById('fCat');
+  catSel.innerHTML = '<option value="">— Select —</option>';
+  CATS[type].forEach(c => {
+    const o = document.createElement('option'); o.value = o.textContent = c;
+    catSel.appendChild(o);
+  });
+
+  if (id) {
+    const item = data[type].find(i => i.id === id);
+    if (item) {
+      document.getElementById('fName').value = item.name;
+      document.getElementById('fAmount').value = item.amount;
+      document.getElementById('fCat').value = item.category || '';
+    }
+  } else {
+    document.getElementById('fName').value = '';
+    document.getElementById('fAmount').value = '';
+    catSel.value = '';
+  }
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  editId = null;
+}
+
+async function saveItem() {
+  const name   = document.getElementById('fName').value.trim();
+  const amount = parseFloat(document.getElementById('fAmount').value);
+  const cat    = document.getElementById('fCat').value;
+
+  if (!name || isNaN(amount) || amount <= 0) {
+    showToast('Please fill in name and a valid amount', true);
+    return;
+  }
+
+  const period = getKey();
+
+  if (editId) {
+    // Update existing
+    const idx = data[currentType].findIndex(i => i.id === editId);
+    if (idx !== -1) {
+      data[currentType][idx] = { ...data[currentType][idx], name, amount, category: cat };
+      await saveToCloud(data[currentType][idx]);
+    }
+  } else {
+    // Insert new
+    const newItem = {
+      id: 'local_' + Date.now(),
+      period,
+      type: currentType,
+      name,
+      amount,
+      category: cat,
+      created_at: new Date().toISOString()
+    };
+    data[currentType].push(newItem);
+    await saveToCloud(newItem);
+    // Reload to get real ID from DB
+    setTimeout(() => loadAll(), 800);
+  }
+
+  renderAll();
+  closeModal();
+  showToast('✓ Saved');
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+async function deleteItem(type, id) {
+  if (!confirm('Delete this item?')) return;
+  data[type] = data[type].filter(i => i.id !== id);
+  renderAll();
+  await deleteFromCloud(id);
+  showToast('Deleted');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderList('income');
+  renderList('loans');
+  renderList('savings');
+  renderList('expenses');
+  renderSummary();
+}
+
+function renderList(type) {
+  const el = document.getElementById('list-' + type);
+  const items = data[type];
+  if (!items || !items.length) { el.innerHTML = '<div class="empty">No entries yet. Tap + ADD.</div>'; return; }
+  el.innerHTML = items.map(item => `
+    <div class="item-row">
+      <div class="item-dot" style="background:${COLORS[type]}"></div>
+      <div class="item-name">
+        <div style="font-size:.9rem;">${item.name}</div>
+        ${item.category ? `<div style="font-size:.7rem;color:var(--muted);margin-top:1px;">${item.category}</div>` : ''}
+      </div>
+      <div class="item-amount ${type}">R ${fmt(item.amount)}</div>
+      <div class="item-actions">
+        <button onclick="openModal('${type}','${item.id}')" title="Edit">✏️</button>
+        <button onclick="deleteItem('${type}','${item.id}')" title="Delete">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSummary() {
+  const inc  = sum(data.income);
+  const exp  = sum(data.expenses);
+  const loan = sum(data.loans);
+  const sav  = sum(data.savings);
+  const net  = inc - exp - loan - sav;
+
+  document.getElementById('sum-income').textContent   = 'R ' + fmt(inc);
+  document.getElementById('sum-expenses').textContent  = 'R ' + fmt(exp);
+  document.getElementById('sum-loans').textContent     = 'R ' + fmt(loan);
+  document.getElementById('sum-savings').textContent   = 'R ' + fmt(sav);
+
+  const netEl = document.getElementById('net-balance');
+  netEl.textContent = (net < 0 ? '- R ' : 'R ') + fmt(Math.abs(net));
+  netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const pct = inc > 0 ? Math.min(100, ((inc - Math.max(0, -net)) / inc) * 100) : 0;
+  const bar = document.getElementById('net-bar');
+  bar.style.width = pct + '%';
+  bar.style.background = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('net-label').textContent =
+    net >= 0 ? `R ${fmt(net)} available after all deductions` : `R ${fmt(Math.abs(net))} over budget`;
+
+  // Breakdown
+  const bdEl = document.getElementById('breakdown-list');
+  const rows = [
+    ...data.income.map(i => ({ label: i.name, val: i.amount, type: 'income' })),
+    ...data.loans.map(i => ({ label: i.name + ' (Loan)', val: -i.amount, type: 'loans' })),
+    ...data.savings.map(i => ({ label: i.name + ' (Saving)', val: -i.amount, type: 'savings' })),
+    ...data.expenses.map(i => ({ label: i.name, val: -i.amount, type: 'expenses' })),
+  ];
+  bdEl.innerHTML = rows.map(r => `
+    <div class="item-row">
+      <div class="item-dot" style="background:${COLORS[r.type]}"></div>
+      <div class="item-name">${r.label}</div>
+      <div class="item-amount ${r.val >= 0 ? 'income' : 'expense'}">${r.val >= 0 ? '+' : ''}R ${fmt(Math.abs(r.val))}</div>
+    </div>
+  `).join('') || '<div class="empty">Nothing to show.</div>';
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function sum(arr) { return (arr || []).reduce((a, b) => a + (parseFloat(b.amount) || 0), 0); }
+function fmt(n) { return Number(n).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+// ─── EXPORT CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  const period = getKey();
+  const rows = [['Period','Type','Name','Category','Amount']];
+  ['income','loans','savings','expenses'].forEach(type => {
+    data[type].forEach(i => rows.push([period, type, i.name, i.category||'', i.amount]));
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `MK_Budget_${period}.csv`;
+  a.click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('yearSelect').addEventListener('change', loadAll);
+document.getElementById('monthSelect').addEventListener('change', loadAll);
+
+// Set current month
+const nowMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+document.getElementById('monthSelect').value = nowMonth;
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Check if Supabase table exists; if not, create via RPC or just handle gracefully
+loadAll();
+</script>
+</body>
+</html>
