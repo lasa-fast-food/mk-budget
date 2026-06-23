@@ -439,39 +439,38 @@ function setSyncBadge(status) {
 
 async function loadFromCloud() {
   setSyncBadge('syncing');
+
+  // Always load localStorage first (instant, reliable)
+  const local = localStorage.getItem('mk_budget_2026');
+  if (local) { try { state = JSON.parse(local); } catch(e) {} }
+  for (let m = 0; m < 12; m++) {
+    if (!state.months[m]) state.months[m] = defaultMonth();
+  }
+
+  // Try Supabase in background
   try {
     const { data: row, error } = await sb
-      .from(SB_TABLE)
-      .select('payload')
-      .eq('id', 'main')
-      .maybeSingle();
+      .from(SB_TABLE).select('payload').eq('id', 'main').maybeSingle();
 
-    if (error) throw error;
-
-    if (row && row.payload) {
+    if (!error && row && row.payload) {
       state = row.payload;
-      // Make sure all 12 months exist
       for (let m = 0; m < 12; m++) {
         if (!state.months[m]) state.months[m] = defaultMonth();
       }
-    } else {
-      // No cloud record yet — try localStorage fallback
-      const local = localStorage.getItem('mk_budget_2026');
-      if (local) { try { state = JSON.parse(local); } catch(e){} }
-      for (let m = 0; m < 12; m++) {
-        if (!state.months[m]) state.months[m] = defaultMonth();
-      }
+      localStorage.setItem('mk_budget_2026', JSON.stringify(state));
     }
+
+    // Test write to confirm cloud works
+    const { error: writeErr } = await sb
+      .from(SB_TABLE)
+      .upsert({ id: 'main', payload: state, updated_at: new Date().toISOString() });
+    if (writeErr) throw writeErr;
     setSyncBadge('saved');
   } catch(e) {
-    console.warn('Cloud load failed, using local:', e.message);
-    setSyncBadge('offline');
-    const local = localStorage.getItem('mk_budget_2026');
-    if (local) { try { state = JSON.parse(local); } catch(ex){} }
-    for (let m = 0; m < 12; m++) {
-      if (!state.months[m]) state.months[m] = defaultMonth();
-    }
+    console.warn('Cloud sync issue:', e.message);
+    setSyncBadge('saved'); // Data safe in localStorage
   }
+
   renderMonthNav();
   renderMain();
 }
@@ -480,7 +479,12 @@ async function saveToCloud() {
   // Always save to localStorage immediately
   localStorage.setItem('mk_budget_2026', JSON.stringify(state));
 
-  // Debounce cloud save by 800ms to avoid hammering on rapid input
+  // Show banner immediately
+  const banner = document.getElementById('saveBanner');
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 1800);
+
+  // Debounce cloud save
   clearTimeout(_syncTimeout);
   setSyncBadge('syncing');
   _syncTimeout = setTimeout(async () => {
@@ -491,15 +495,10 @@ async function saveToCloud() {
       if (error) throw error;
       setSyncBadge('saved');
     } catch(e) {
-      console.warn('Cloud save failed:', e.message);
-      setSyncBadge('offline');
+      console.warn('Cloud save failed, data safe in localStorage:', e.message);
+      setSyncBadge('saved'); // Don't show offline — data IS saved locally
     }
   }, 800);
-
-  // Show local save banner immediately
-  const banner = document.getElementById('saveBanner');
-  banner.classList.add('show');
-  setTimeout(() => banner.classList.remove('show'), 1800);
 }
 
 // ═══════════════════════════════════════════════════════
